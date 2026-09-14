@@ -1,5 +1,7 @@
 const STORAGE_KEY = 'propostaja_usage'
+const PRO_KEY = 'propostaja_pro'
 const FREE_LIMIT = 3
+const VALID_CODE = 'PROJA990'
 
 export type UsageData = {
   month: string // YYYY-MM
@@ -27,16 +29,39 @@ export function getUsage(): UsageData {
   }
 }
 
+export function isPro(): boolean {
+  try {
+    return localStorage.getItem(PRO_KEY) === '1'
+  } catch {
+    return false
+  }
+}
+
+export function activatePro(code: string): boolean {
+  const normalized = code.trim().toUpperCase()
+  if (normalized !== VALID_CODE) return false
+  try {
+    localStorage.setItem(PRO_KEY, '1')
+    return true
+  } catch {
+    return false
+  }
+}
+
+/** Free generations remaining this month (ignores Pro). */
 export function remainingFree(): number {
   const { count } = getUsage()
   return Math.max(0, FREE_LIMIT - count)
 }
 
 export function canGenerate(): boolean {
-  return remainingFree() > 0
+  return isPro() || remainingFree() > 0
 }
 
 export function recordGeneration(): UsageData {
+  if (isPro()) {
+    return getUsage()
+  }
   const usage = getUsage()
   const next: UsageData = {
     month: currentMonth(),

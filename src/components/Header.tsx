@@ -1,9 +1,10 @@
 type HeaderProps = {
   onNavigate: (view: 'landing' | 'generator') => void
   remaining: number
+  isPro: boolean
 }
 
-export function Header({ onNavigate, remaining }: HeaderProps) {
+export function Header({ onNavigate, remaining, isPro }: HeaderProps) {
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-white/90 backdrop-blur">
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-3 sm:px-6">
@@ -35,9 +36,15 @@ export function Header({ onNavigate, remaining }: HeaderProps) {
           >
             Preços
           </a>
-          <span className="hidden text-xs text-muted sm:inline">
-            Grátis: {remaining}/3 este mês
-          </span>
+          {isPro ? (
+            <span className="rounded-full bg-brand-100 px-2.5 py-0.5 text-xs font-semibold text-brand-700">
+              Pro
+            </span>
+          ) : (
+            <span className="hidden text-xs text-muted sm:inline">
+              Grátis: {remaining}/3 este mês
+            </span>
+          )}
           <button
             type="button"
             onClick={() => onNavigate('generator')}

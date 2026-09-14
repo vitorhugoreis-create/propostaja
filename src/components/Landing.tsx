@@ -1,8 +1,22 @@
+import { useState } from 'react'
+import { isPro } from '../lib/storage'
+import { MbWayPay } from './MbWayPay'
+import { PRO_PRICE_LABEL } from '../lib/payments'
+
 type LandingProps = {
   onStart: () => void
+  onProActivated?: () => void
 }
 
-export function Landing({ onStart }: LandingProps) {
+export function Landing({ onStart, onProActivated }: LandingProps) {
+  const [showPay, setShowPay] = useState(false)
+  const [pro, setPro] = useState(isPro())
+
+  function handleActivated() {
+    setPro(true)
+    onProActivated?.()
+  }
+
   return (
     <div>
       {/* Hero */}
@@ -118,25 +132,32 @@ export function Landing({ onStart }: LandingProps) {
               </span>
               <h3 className="text-lg font-semibold text-ink">Pro</h3>
               <p className="mt-2">
-                <span className="text-3xl font-bold text-ink">9,90€</span>
-                <span className="text-muted"> / mês</span>
+                <span className="text-3xl font-bold text-ink">{PRO_PRICE_LABEL}</span>
+                <span className="text-muted"> pagamento único</span>
               </p>
+              <p className="mt-1 text-xs text-muted">via MB Way</p>
               <ul className="mt-4 space-y-2 text-sm text-muted">
                 <li>✓ Propostas ilimitadas</li>
                 <li>✓ Tudo do plano Free</li>
                 <li>✓ Prioridade em novas funcionalidades</li>
               </ul>
-              <button
-                type="button"
-                disabled
-                title="Pagamentos com Stripe — em breve"
-                className="mt-6 w-full cursor-not-allowed rounded-xl bg-brand-600/70 py-2.5 text-sm font-semibold text-white"
-              >
-                Em breve (Stripe)
-              </button>
-              <p className="mt-2 text-center text-xs text-muted">
-                TODO: integração Stripe — pagamentos ainda não disponíveis.
-              </p>
+              {pro ? (
+                <div className="mt-6">
+                  <MbWayPay onActivated={handleActivated} />
+                </div>
+              ) : showPay ? (
+                <div className="mt-6">
+                  <MbWayPay onActivated={handleActivated} />
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setShowPay(true)}
+                  className="mt-6 w-full rounded-xl bg-brand-600 py-2.5 text-sm font-semibold text-white hover:bg-brand-700"
+                >
+                  Ativar Pro via MB Way
+                </button>
+              )}
             </div>
           </div>
         </div>

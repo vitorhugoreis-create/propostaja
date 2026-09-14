@@ -2,10 +2,13 @@ import { useMemo, useState, type FormEvent, type ReactNode } from 'react'
 import {
   FREE_LIMIT,
   canGenerate,
+  isPro,
   recordGeneration,
   remainingFree,
 } from '../lib/storage'
 import { generateProposal, type Tone } from '../lib/generate'
+import { MbWayPay } from './MbWayPay'
+import { PRO_PRICE_LABEL } from '../lib/payments'
 
 type GeneratorProps = {
   onUsageChange: () => void
@@ -20,6 +23,7 @@ export function Generator({ onUsageChange }: GeneratorProps) {
   const [tom, setTom] = useState<Tone>('formal')
   const [proposta, setProposta] = useState('')
   const [copied, setCopied] = useState(false)
+  const [pro, setPro] = useState(isPro())
   const [blocked, setBlocked] = useState(!canGenerate())
   const [remaining, setRemaining] = useState(remainingFree())
 
@@ -33,6 +37,24 @@ export function Generator({ onUsageChange }: GeneratorProps) {
       Boolean(preco.trim())
     )
   }, [blocked, cliente, servico, escopo, prazo, preco])
+
+  function refreshLimits() {
+    const unlocked = isPro()
+    setPro(unlocked)
+    if (unlocked) {
+      setBlocked(false)
+      setRemaining(FREE_LIMIT)
+    } else {
+      const left = remainingFree()
+      setRemaining(left)
+      setBlocked(left === 0)
+    }
+  }
+
+  function handleActivated() {
+    refreshLimits()
+    onUsageChange()
+  }
 
   function handleGenerate(e: FormEvent) {
     e.preventDefault()
@@ -51,9 +73,7 @@ export function Generator({ onUsageChange }: GeneratorProps) {
     })
     setProposta(text)
     recordGeneration()
-    const left = remainingFree()
-    setRemaining(left)
-    setBlocked(left === 0)
+    refreshLimits()
     onUsageChange()
     setCopied(false)
   }
@@ -96,22 +116,35 @@ export function Generator({ onUsageChange }: GeneratorProps) {
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-ink">Gerar proposta</h1>
         <p className="mt-2 text-muted">
-          Preenche os campos abaixo. Restam{' '}
-          <strong className="text-ink">
-            {remaining} de {FREE_LIMIT}
-          </strong>{' '}
-          gerações grátis este mês.
+          {pro ? (
+            <>
+              Preenche os campos abaixo.{' '}
+              <strong className="text-brand-700">Plano Pro</strong> — propostas
+              ilimitadas.
+            </>
+          ) : (
+            <>
+              Preenche os campos abaixo. Restam{' '}
+              <strong className="text-ink">
+                {remaining} de {FREE_LIMIT}
+              </strong>{' '}
+              gerações grátis este mês.
+            </>
+          )}
         </p>
       </div>
 
-      {blocked && (
-        <div className="mb-8 rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
-          <p className="font-semibold">Atingiste o limite do plano Free</p>
-          <p className="mt-1 text-sm">
-            Usaste as {FREE_LIMIT} propostas deste mês. O plano Pro (9,90€/mês)
-            permitirá gerações ilimitadas — pagamentos com Stripe em breve
-            (TODO).
-          </p>
+      {blocked && !pro && (
+        <div className="mb-8 space-y-4">
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-amber-900">
+            <p className="font-semibold">Atingiste o limite do plano Free</p>
+            <p className="mt-1 text-sm">
+              Usaste as {FREE_LIMIT} propostas deste mês. Ativa o Pro (
+              {PRO_PRICE_LABEL}, pagamento único via MB Way) para gerações
+              ilimitadas.
+            </p>
+          </div>
+          <MbWayPay onActivated={handleActivated} />
         </div>
       )}
 
